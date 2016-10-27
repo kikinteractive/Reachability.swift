@@ -40,30 +40,30 @@ public enum ReachabilityError: ErrorType {
 public let ReachabilityChangedNotification = "ReachabilityChangedNotification"
 
 func callback(reachability:SCNetworkReachability, flags: SCNetworkReachabilityFlags, info: UnsafeMutablePointer<Void>) {
-    let reachability = Unmanaged<Reachability>.fromOpaque(COpaquePointer(info)).takeUnretainedValue()
-
+    let reachability = Unmanaged<ReachabilityS>.fromOpaque(COpaquePointer(info)).takeUnretainedValue()
+    
     dispatch_async(dispatch_get_main_queue()) {
         reachability.reachabilityChanged(flags)
     }
 }
 
 
-public class Reachability: NSObject {
-
-    public typealias NetworkReachable = (Reachability) -> ()
-    public typealias NetworkUnreachable = (Reachability) -> ()
-
-    public enum NetworkStatus: CustomStringConvertible {
-
-        case NotReachable, ReachableViaWiFi, ReachableViaWWAN
-
+public class ReachabilityS: NSObject {
+    
+    public typealias NetworkReachable = (ReachabilityS) -> ()
+    public typealias NetworkUnreachable = (ReachabilityS) -> ()
+    
+    public enum NetworkStatusS: CustomStringConvertible {
+        
+        case NotReachableS, ReachableViaWiFiS, ReachableViaWWANS
+        
         public var description: String {
             switch self {
-            case .ReachableViaWWAN:
+            case .ReachableViaWWANS:
                 return "Cellular"
-            case .ReachableViaWiFi:
+            case .ReachableViaWiFiS:
                 return "WiFi"
-            case .NotReachable:
+            case .NotReachableS:
                 return "No Connection"
             }
         }
@@ -75,16 +75,16 @@ public class Reachability: NSObject {
     public var reachableOnWWAN: Bool
     public var notificationCenter = NSNotificationCenter.defaultCenter()
 
-    public var currentReachabilityStatus: NetworkStatus {
+    public var currentReachabilityStatus: NetworkStatusS {
         if isReachable() {
             if isReachableViaWiFi() {
-                return .ReachableViaWiFi
+                return .ReachableViaWiFiS
             }
             if isRunningOnDevice {
-                return .ReachableViaWWAN
+                return .ReachableViaWWANS
             }
         }
-        return .NotReachable
+        return .NotReachableS
     }
 
     public var currentReachabilityString: String {
@@ -108,7 +108,7 @@ public class Reachability: NSObject {
         self.init(reachabilityRef: ref)
     }
 
-    public class func reachabilityForInternetConnection() throws -> Reachability {
+    public class func reachabilityForInternetConnection() throws -> ReachabilityS {
         
         var zeroAddress = sockaddr_in()
         zeroAddress.sin_len = UInt8(sizeofValue(zeroAddress))
@@ -118,11 +118,11 @@ public class Reachability: NSObject {
             SCNetworkReachabilityCreateWithAddress(nil, UnsafePointer($0))
         }) else { throw ReachabilityError.FailedToCreateWithAddress(zeroAddress) }
         
-        return Reachability(reachabilityRef: ref)
+        return ReachabilityS(reachabilityRef: ref)
     }
 
-    public class func reachabilityForLocalWiFi() throws -> Reachability {
 
+    public class func reachabilityForLocalWiFi() throws -> ReachabilityS {
         var localWifiAddress: sockaddr_in = sockaddr_in(sin_len: __uint8_t(0), sin_family: sa_family_t(0), sin_port: in_port_t(0), sin_addr: in_addr(s_addr: 0), sin_zero: (0, 0, 0, 0, 0, 0, 0, 0))
         localWifiAddress.sin_len = UInt8(sizeofValue(localWifiAddress))
         localWifiAddress.sin_family = sa_family_t(AF_INET)
@@ -135,7 +135,7 @@ public class Reachability: NSObject {
             SCNetworkReachabilityCreateWithAddress(nil, UnsafePointer($0))
         }) else { throw ReachabilityError.FailedToCreateWithAddress(localWifiAddress) }
         
-        return Reachability(reachabilityRef: ref)
+        return ReachabilityS(reachabilityRef: ref)
     }
 
     // MARK: - *** Notifier methods ***
